@@ -1,0 +1,27 @@
+[project]
+name = "sllm"
+version = "0.1.0"
+description = "Compact speech-LLMs: chunked conformer encoder + Qwen3.5 decoder trained from scratch"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.8",
+    "transformers>=5.2",
+    "datasets>=3.0",
+    "soundfile>=0.12",
+    "numpy",
+]
+
+[project.optional-dependencies]
+# Fast kernels for the Gated DeltaNet layers of Qwen3.5. Linux + CUDA only.
+# Without them transformers falls back to a (correct but slow) PyTorch implementation.
+cuda = [
+    "flash-linear-attention>=0.3",
+    "causal-conv1d>=1.5",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["sllm*"]

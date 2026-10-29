@@ -1,0 +1,142 @@
+# Progress reports
+
+- Larissa
+    - avoid task overfitting. keep model adhere to target task
+    - e.g. model does summarization instead of ASR
+    - papers mainly on text-based models
+        - some on speech models but still many gaps
+    - confidence + hallucination detection
+        - e.g. for SQA - model ignores speech and focuses on text prompt instead
+        - might be mitigated by “audio contrastive decoding”
+    - quantify model uncertainty during inference
+        - possibly re-run model in such cases
+    - analysis of search space
+        - all kinds of models (e.g. speech llm or AM+LLM)
+    - decoding techniques related to efficiency
+        - e.g. problem with CTC prefix scores and large vocabs
+    - work on making RASR more efficient
+        - state handling on GPU working now
+        - try to utilize full GPU all the time
+            - e.g. batched recognition planned
+        - fix inefficiency of recognition initialization
+- avoid task overfitting. keep model adhere to target task
+- e.g. model does summarization instead of ASR
+- papers mainly on text-based models
+    - some on speech models but still many gaps
+- some on speech models but still many gaps
+- confidence + hallucination detection
+    - e.g. for SQA - model ignores speech and focuses on text prompt instead
+    - might be mitigated by “audio contrastive decoding”
+- e.g. for SQA - model ignores speech and focuses on text prompt instead
+- might be mitigated by “audio contrastive decoding”
+- quantify model uncertainty during inference
+    - possibly re-run model in such cases
+- possibly re-run model in such cases
+- analysis of search space
+    - all kinds of models (e.g. speech llm or AM+LLM)
+- all kinds of models (e.g. speech llm or AM+LLM)
+- decoding techniques related to efficiency
+    - e.g. problem with CTC prefix scores and large vocabs
+- e.g. problem with CTC prefix scores and large vocabs
+- work on making RASR more efficient
+    - state handling on GPU working now
+    - try to utilize full GPU all the time
+        - e.g. batched recognition planned
+    - fix inefficiency of recognition initialization
+- state handling on GPU working now
+- try to utilize full GPU all the time
+    - e.g. batched recognition planned
+- e.g. batched recognition planned
+- fix inefficiency of recognition initialization
+- Jingjing
+    - middle layers of LLM: speech and text representations close together
+    - later layers: attention more focused on text than speech
+        - conclusion: more redundancy in speech positions?
+        - conclusions might/will be different for different mixture of tasks
+    - investigate training time task schedule
+        - literature: start with ASR to align text LLM to speech → then do other downstream tasks
+        - jingjing’s result: order does not matter?
+    - hallucinate-audio-benchmark
+        - related to larissa’s audio contrastive decoding
+    - found paper comparing encoder-free vs encoder-LLM architectures
+- middle layers of LLM: speech and text representations close together
+- later layers: attention more focused on text than speech
+    - conclusion: more redundancy in speech positions?
+    - conclusions might/will be different for different mixture of tasks
+- conclusion: more redundancy in speech positions?
+- conclusions might/will be different for different mixture of tasks
+- investigate training time task schedule
+    - literature: start with ASR to align text LLM to speech → then do other downstream tasks
+    - jingjing’s result: order does not matter?
+- literature: start with ASR to align text LLM to speech → then do other downstream tasks
+- jingjing’s result: order does not matter?
+- hallucinate-audio-benchmark
+    - related to larissa’s audio contrastive decoding
+- related to larissa’s audio contrastive decoding
+- found paper comparing encoder-free vs encoder-LLM architectures
+- Haotian
+    - analyze modality matching in open source models (Gemma, qwen-omni, …)
+- analyze modality matching in open source models (Gemma, qwen-omni, …)
+- Robin
+    - 
+- 
+
+# Open Questions
+
+- non-semantically driven tasks should be included in pre-training
+    - e.g. self-supervised
+- text-only + audio-only, interleaved audio-text, paired audio-text (ASR, acoustic event classification)
+- what downstream tasks do we want to have
+    - things like emotion recognition or rather focus on classic seq2seq
+    - maybe check papers like qwen-audio for available tasks
+- what architecture to use
+    - encoder-free or with encoder or with very small encoder?
+- how much training tokens realistically possible
+- what datasets to use
+    - text-only
+        - ASR-transcript-like text
+        - general text, e.g. fine-web-edu (https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu)
+
+
+
+# Initial Setup V1
+
+- encoder-decoder size relations
+    - 1: 20M encoder, 80M decoder
+    - 2: 40M enc, 160M dec
+    - 3: 100M enc, 400M dec
+    - 4: 200M enc, 800M dec
+- architecture
+    - speech encoder
+        - chunked conformer (choose chunk size 10, right context 5)
+    - decoder
+        - setting 1: qwen 3.5 MoE
+        - setting 2: qwen 3.5 dense (to see effect on VRAM/training time)
+- operation mode
+    - prefix-only then ablate prefix + interleaved LLM
+- training datasets
+    - start with equal amount for each chosen data type
+    - text-only (CE loss)
+        - setting 1: FineWeb-Edu (#tokens of ASR transcripts)
+        - setting 2: FineWeb-Edu (#tokens x 2 of ASR transcripts)
+        - setting 3: FineWeb-Edu (#tokens of ASR transcripts) + pseudo-audio
+    - paired speech-text (text CE loss)
+        - ASR
+            - setting 1: Loquacious (25k hours) x 2 epochs
+            - setting 2: (Loquacious (25k hours) + YODAS-Granary (25k hours)) x 1 epoch
+            - setting 3: (Loquacious (12.5k hours) + YODAS-Granary (12.5k hours)) x 2 epochs
+        - speech-to-text translation (ST)
+            - setting 1: (YODAS-Granary Es-En (12.5k hours) + 
+            VoxPopuli Granary 12.5k hours) x 2 epochs
+            - setting 2: (YODAS-Granary Es-En (26k hours) + 
+            VoxPopuli Granary 21k hours) x 1 epoch
+- tasks/benchmarks
+    - ASR
+        - WER
+    - ST
+        - BLEU
+        - Comet
+    - Text
+        - PPL
+    - NLU
+        - choose task where small configuration can get reasonable performance
